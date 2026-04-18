@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fuel — iRacing Calculator</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9335925425668739" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #0a0a0a;
+    --surface:   #111111;
+    --surface2:  #1a1a1a;
+    --border:    #2a2a2a;
+    --border-lt: #222222;
+    --text:      #f0f0ee;
+    --muted:     #666660;
+    --muted2:    #444440;
+    --accent:    #e63018;
+    --accent-bg: rgba(230,48,24,0.08);
+    --green:     #22c55e;
+    --amber:     #f59e0b;
+    --mono:      'DM Mono', monospace;
+    --sans:      'DM Sans', sans-serif;
+  }
+  html { font-size: 16px; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-weight: 400; line-height: 1.5; min-height: 100vh; }
+  .shell { max-width: 680px; margin: 0 auto; padding: 0 24px 80px; }
+
+  header { padding: 48px 0 40px; border-bottom: 1px solid var(--border); margin-bottom: 40px; display: flex; align-items: flex-end; justify-content: space-between; }
+  .wordmark { display: flex; flex-direction: column; gap: 4px; }
+  .wordmark-top { font-family: var(--mono); font-size: 10px; font-weight: 400; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .wordmark-name { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); line-height: 1; }
+  .wordmark-name em { font-style: normal; color: var(--accent); }
+  .version-tag { font-family: var(--mono); font-size: 10px; color: var(--muted2); letter-spacing: 0.08em; }
+
+  nav { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
+  .nav-tab { padding: 12px 20px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; user-select: none; }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .section { margin-bottom: 36px; }
+  .section-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .field-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12px; font-weight: 500; color: var(--muted); }
+  .field input, .field select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--text);
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,48,24,0.12); }
+  .field input::placeholder { color: var(--border); }
+  .field select option { background: var(--surface2); }
+
+  .slider-field { margin-bottom: 16px; }
+  .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .slider-header label { font-size: 12px; font-weight: 500; color: var(--muted); }
+  .slider-value { font-family: var(--mono); font-size: 13px; color: var(--text); font-weight: 500; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; min-width: 32px; text-align: center; }
+  input[type="range"] { -webkit-appearance: none; width: 100%; height: 2px; background: var(--border); border-radius: 2px; outline: none; padding: 0; border: none; box-shadow: none; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: var(--surface2); border: 2px solid var(--accent); border-radius: 50%; cursor: pointer; transition: transform 0.1s; }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+
+  .preset-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
+  .preset-btn { font-family: var(--mono); font-size: 11px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--muted); cursor: pointer; transition: all 0.15s; letter-spacing: 0.04em; }
+  .preset-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+
+  .result-block { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 28px; margin-top: 32px; }
+  .result-main { display: flex; align-items: baseline; gap: 8px; margin-bottom: 24px; }
+  .result-big { font-size: 56px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--text); transition: color 0.2s; }
+  .result-big.red { color: var(--accent); }
+  .result-unit-large { font-family: var(--mono); font-size: 16px; color: var(--muted); }
+
+  .result-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 16px; }
+  .result-cell { background: var(--surface2); padding: 14px 16px; }
+  .result-cell-label { font-size: 11px; color: var(--muted); font-weight: 500; margin-bottom: 4px; }
+  .result-cell-val { font-family: var(--mono); font-size: 16px; font-weight: 500; color: var(--text); }
+  .result-cell-val.accent { color: var(--accent); }
+
+  .fuel-bar-wrap { margin-top: 16px; }
+  .fuel-bar-meta { display: flex; justify-content: space-between; font-size: 11px; font-family: var(--mono); color: var(--muted); margin-bottom: 6px; }
+  .fuel-bar-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .fuel-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease, background 0.3s; }
+
+  .warning { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding: 12px 16px; background: rgba(230,48,24,0.08); border: 1px solid rgba(230,48,24,0.25); border-radius: 6px; font-size: 13px; color: var(--accent); }
+  .warning-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+
+  .stint-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 24px; }
+  .stint-summary-cell { background: var(--surface); padding: 16px; text-align: center; }
+  .stint-summary-cell .val { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); line-height: 1; margin-bottom: 4px; }
+  .stint-summary-cell .val.accent { color: var(--accent); }
+  .stint-summary-cell .lbl { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+  .log-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align: left; padding: 8px 12px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 400; }
+  tbody td { padding: 11px 12px; border-bottom: 1px solid var(--border-lt); color: var(--text); font-family: var(--mono); font-size: 13px; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--surface2); }
+
+  .pit-tag { display: inline-block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); border: 1px solid rgba(230,48,24,0.3); border-radius: 3px; padding: 2px 6px; background: var(--accent-bg); }
+  .finish-tag { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  .live-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .live-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+  .live-card-val { font-size: 36px; font-weight: 600; letter-spacing: -0.02em; line-height: 1; color: var(--text); margin-bottom: 4px; transition: color 0.2s; }
+  .live-card-lbl { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+  .lap-input-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 24px; }
+  .lap-input-row .field { flex: 1; }
+
+  .btn { padding: 10px 18px; border-radius: 6px; font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 1px solid; white-space: nowrap; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #c8270f; border-color: #c8270f; }
+  .btn-ghost { background: transparent; border-color: var(--border); color: var(--muted); }
+  .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+
+  @media (max-width: 520px) {
+    .field-row.three { grid-template-columns: 1fr 1fr; }
+    .stint-summary { grid-template-columns: 1fr 1fr; }
+    .result-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <div class="wordmark">
+      <span class="wordmark-top">iRacing Strategy</span>
+      <span class="wordmark-name">Fuel<em>.</em></span>
+    </div>
+    <span class="version-tag">v2.0</span>
+  </header>
+
+  <nav>
+    <div class="nav-tab active" onclick="switchTab('calc')">Calculator</div>
+    <div class="nav-tab" onclick="switchTab('stint')">Stint Planer</div>
+    <div class="nav-tab" onclick="switchTab('tracker')">Live Tracker</div>
+  </nav>
+
+  <!-- CALCULATOR -->
+  <div id="page-calc" class="page active">
+    <div class="section">
+      <div class="section-label">Presets</div>
+      <div class="preset-row">
+        <button class="preset-btn" onclick="loadPreset('sprint')">Sprint 30 min</button>
+        <button class="preset-btn" onclick="loadPreset('60')">Endurance 1h</button>
+        <button class="preset-btn" onclick="loadPreset('f3')">Formula 3</button>
+        <button class="preset-btn" onclick="loadPreset('gt3')">GT3</button>
+        <button class="preset-btn" onclick="loadPreset('gt4')">GT4</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Race Setup</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Renndauer</label>
+          <select id="durationMode" onchange="toggleDurMode()">
+            <option value="time">Minuten</option>
+            <option value="laps">Runden</option>
+          </select>
+        </div>
+        <div class="field" id="durTimeField">
+          <label>Dauer (min)</label>
+          <input type="number" id="raceDuration" value="60" min="1" oninput="calc()">
+        </div>
+        <div class="field" id="durLapsField" style="display:none">
+          <label>Runden gesamt</label>
+          <input type="number" id="raceLaps" value="30" min="1" oninput="calc()">
+        </div>
+      </div>
+      <div class="field-row three">
+        <div class="field">
+          <label>Rundenzeit (mm:ss)</label>
+          <input type="text" id="lapTime" value="1:45" placeholder="1:45" oninput="calc()">
+        </div>
+        <div class="field">
+          <label>Verbrauch / Runde (L)</label>
+          <input type="number" id="fuelPerLap" value="2.8" step="0.01" min="0" oninput="calc()">
+        </div>
+        <div class="field">
+          <label>Tankgröße (L)</label>
+          <input type="number" id="tankSize" value="75" min="1" oninput="calc()">
+        </div>
+      </div>
+      <div class="slider-field">
+        <div class="slider-header">
+          <label>Sicherheitspuffer (extra Runden)</label>
+          <span class="slider-value" id="marginLabel">1</span>
+        </div>
+        <input type="range" id="safetyMargin" min="0" max="5" value="1" step="1"
+          oninput="document.getElementById('marginLabel').textContent=this.value; calc()">
+      </div>
+    </div>
+
+    <div class="result-block">
+      <div class="result-main">
+        <span class="result-big" id="resFuelTotal">—</span>
+        <span class="result-unit-large">Liter</span>
+      </div>
+      <div class="result-row">
+        <div class="result-cell"><div class="result-cell-label">Runden (race)</div><div class="result-cell-val" id="resLaps">—</div></div>
+        <div class="result-cell"><div class="result-cell-label">Runden (gesamt)</div><div class="result-cell-val" id="resTotalLaps">—</div></div>
+        <div class="result-cell"><div class="result-cell-label">Rennzeit</div><div class="result-cell-val" id="resRaceTime">—</div></div>
+        <div class="result-cell"><div class="result-cell-label">Basis-Fuel</div><div class="result-cell-val" id="resBaseFuel">—</div></div>
+        <div class="result-cell"><div class="result-cell-label">% des Tanks</div><div class="result-cell-val" id="resPct">—</div></div>
+        <div class="result-cell"><div class="result-cell-label">Boxenstopps</div><div class="result-cell-val accent" id="resPits">—</div></div>
+      </div>
+      <div class="fuel-bar-wrap">
+        <div class="fuel-bar-meta">
+          <span>0 L</span>
+          <span id="barLabel">Fuel vs. Tank</span>
+          <span id="barMax">75 L</span>
+        </div>
+        <div class="fuel-bar-track"><div class="fuel-bar-fill" id="fuelBarFill"></div></div>
+      </div>
+      <div id="calcWarning"></div>
+    </div>
+  </div>
+
+  <!-- STINT PLANER -->
+  <div id="page-stint" class="page">
+    <div class="section">
+      <div class="section-label">Stint Konfiguration</div>
+      <div class="field-row three">
+        <div class="field"><label>Runden gesamt</label><input type="number" id="stLaps" value="60" min="1" oninput="buildStint()"></div>
+        <div class="field"><label>Verbrauch / Runde (L)</label><input type="number" id="stFpl" value="2.8" step="0.01" oninput="buildStint()"></div>
+        <div class="field"><label>Tankgröße (L)</label><input type="number" id="stTank" value="75" oninput="buildStint()"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Rundenzeit (mm:ss)</label><input type="text" id="stLapTime" value="1:45" oninput="buildStint()"></div>
+        <div class="field"><label>Zeitverlust Boxenstopp (sek)</label><input type="number" id="stPitLoss" value="28" min="0" oninput="buildStint()"></div>
+      </div>
+    </div>
+    <div id="stintOutput"></div>
+  </div>
+
+  <!-- LIVE TRACKER -->
+  <div id="page-tracker" class="page">
+    <div class="section">
+      <div class="section-label">Session</div>
+      <div class="field-row three">
+        <div class="field"><label>Starttankfüllung (L)</label><input type="number" id="trStart" value="50" oninput="renderTracker()"></div>
+        <div class="field"><label>Erw. Verbrauch / Runde</label><input type="number" id="trExpFpl" value="2.8" step="0.01" oninput="renderTracker()"></div>
+        <div class="field"><label>Runden gesamt</label><input type="number" id="trTotalLaps" value="20" oninput="renderTracker()"></div>
+      </div>
+    </div>
+    <div class="live-grid">
+      <div class="live-card"><div class="live-card-val" id="trLap">0</div><div class="live-card-lbl">Aktuelle Runde</div></div>
+      <div class="live-card"><div class="live-card-val" id="trFuelLeft">—</div><div class="live-card-lbl">Fuel verbleibend (L)</div></div>
+      <div class="live-card"><div class="live-card-val" id="trAvg">—</div><div class="live-card-lbl">Ø Verbrauch / Runde</div></div>
+      <div class="live-card"><div class="live-card-val" id="trPoss">—</div><div class="live-card-lbl">Mögliche Runden</div></div>
+    </div>
+    <div class="lap-input-row">
+      <div class="field">
+        <label>Fuel nach dieser Runde (L)</label>
+        <input type="number" id="trLapFuel" step="0.1" min="0" placeholder="z. B. 47.2"
+          onkeydown="if(event.key==='Enter') addLap()">
+      </div>
+      <button class="btn btn-primary" onclick="addLap()">+ Runde</button>
+      <button class="btn btn-ghost" onclick="resetTracker()">Reset</button>
+    </div>
+    <div id="lapLogWrap"></div>
+  </div>
+
+</div>
+
+<script>
+function parseLapTime(s) {
+  s = (s||'').trim();
+  if (s.includes(':')) { const [m,sec]=s.split(':'); return parseFloat(m)*60+parseFloat(sec||0); }
+  return parseFloat(s)||0;
+}
+function fmtTime(sec) {
+  const m=Math.floor(sec/60), s=String(Math.round(sec%60)).padStart(2,'0');
+  return m+':'+s;
+}
+function set(id,val) { document.getElementById(id).textContent=val; }
+
+function switchTab(name) {
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const order=['calc','stint','tracker'];
+  document.querySelectorAll('.nav-tab')[order.indexOf(name)].classList.add('active');
+  document.getElementById('page-'+name).classList.add('active');
+  if(name==='stint') buildStint();
+  if(name==='tracker') renderTracker();
+}
+
+function toggleDurMode() {
+  const byTime = document.getElementById('durationMode').value==='time';
+  document.getElementById('durTimeField').style.display = byTime ? '' : 'none';
+  document.getElementById('durLapsField').style.display = byTime ? 'none' : '';
+  calc();
+}
+
+const PRESETS = {
+  sprint: {min:30,lt:'1:30',fpl:2.2,tank:50,mg:1},
+  '60':   {min:60,lt:'1:45',fpl:2.8,tank:75,mg:2},
+  f3:     {min:45,lt:'1:22',fpl:1.8,tank:45,mg:1},
+  gt3:    {min:60,lt:'2:05',fpl:3.2,tank:100,mg:2},
+  gt4:    {min:60,lt:'2:15',fpl:3.0,tank:90,mg:2},
+};
+function loadPreset(k) {
+  const p=PRESETS[k];
+  document.getElementById('durationMode').value='time'; toggleDurMode();
+  document.getElementById('raceDuration').value=p.min;
+  document.getElementById('lapTime').value=p.lt;
+  document.getElementById('fuelPerLap').value=p.fpl;
+  document.getElementById('tankSize').value=p.tank;
+  document.getElementById('safetyMargin').value=p.mg;
+  document.getElementById('marginLabel').textContent=p.mg;
+  calc();
+}
+
+function calc() {
+  const mode  = document.getElementById('durationMode').value;
+  const ltSec = parseLapTime(document.getElementById('lapTime').value);
+  const fpl   = parseFloat(document.getElementById('fuelPerLap').value)||0;
+  const tank  = parseFloat(document.getElementById('tankSize').value)||1;
+  const mg    = parseInt(document.getElementById('safetyMargin').value)||0;
+
+  let raceLaps;
+  if (mode==='time') {
+    const mins=parseFloat(document.getElementById('raceDuration').value)||0;
+    raceLaps = ltSec>0 ? Math.ceil(mins*60/ltSec) : 0;
+  } else {
+    raceLaps=parseInt(document.getElementById('raceLaps').value)||0;
+  }
+
+  const total    = raceLaps+mg;
+  const fuelBase = raceLaps*fpl;
+  const fuelTot  = total*fpl;
+  const pct      = fuelTot/tank*100;
+  const minPits  = Math.max(0,Math.ceil(fuelTot/tank)-1);
+  const overflow = fuelTot>tank;
+
+  set('resFuelTotal', fuelTot.toFixed(1));
+  set('resLaps',      raceLaps);
+  set('resTotalLaps', total);
+  set('resRaceTime',  fmtTime(raceLaps*ltSec));
+  set('resBaseFuel',  fuelBase.toFixed(1)+' L');
+  set('resPct',       pct.toFixed(0)+'%');
+  set('resPits',      minPits);
+
+  document.getElementById('resFuelTotal').className='result-big'+(overflow?' red':'');
+  document.getElementById('barMax').textContent=tank+' L';
+  document.getElementById('barLabel').textContent=fuelTot.toFixed(1)+' L / '+tank+' L';
+
+  const bar=document.getElementById('fuelBarFill');
+  bar.style.width=Math.min(pct,100)+'%';
+  bar.style.background=pct<70?'#22c55e':pct<90?'#f59e0b':'#e63018';
+
+  document.getElementById('calcWarning').innerHTML=overflow
+    ? `<div class="warning"><div class="warning-dot"></div>Tank zu klein — ${fuelTot.toFixed(1)} L benötigt, Kapazität ${tank} L. Mindestens ${minPits} Boxenstopp${minPits>1?'s':''} nötig.</div>`
+    : '';
+}
+
+function buildStint() {
+  const totalLaps=parseInt(document.getElementById('stLaps').value)||0;
+  const fpl=parseFloat(document.getElementById('stFpl').value)||0;
+  const tank=parseFloat(document.getElementById('stTank').value)||1;
+  const ltSec=parseLapTime(document.getElementById('stLapTime').value);
+  const pitLoss=parseFloat(document.getElementById('stPitLoss').value)||0;
+
+  const maxLaps=Math.floor(tank/fpl);
+  const stints=[]; let done=0,num=1;
+  while(done<totalLaps) {
+    const laps=Math.min(maxLaps,totalLaps-done);
+    stints.push({num,from:done+1,to:done+laps,laps,fuel:laps*fpl,time:laps*ltSec});
+    done+=laps; num++;
+  }
+
+  const totalTime=stints.reduce((s,x,i)=>s+x.time+(i>0?pitLoss:0),0);
+  const pits=stints.length-1;
+
+  const rows=stints.map((s,i)=>`<tr>
+    <td>${s.num}</td><td>${s.from}–${s.to}</td><td>${s.laps}</td>
+    <td>${s.fuel.toFixed(1)} L</td><td>${fmtTime(s.time)}</td>
+    <td>${i<stints.length-1?'<span class="pit-tag">Pit Stop</span>':'<span class="finish-tag">Ziel ✓</span>'}</td>
+  </tr>`).join('');
+
+  document.getElementById('stintOutput').innerHTML=`
+    <div class="stint-summary">
+      <div class="stint-summary-cell"><div class="val ${pits>0?'accent':''}">${pits}</div><div class="lbl">Pit Stops</div></div>
+      <div class="stint-summary-cell"><div class="val">${stints.length}</div><div class="lbl">Stints</div></div>
+      <div class="stint-summary-cell"><div class="val">${maxLaps}</div><div class="lbl">Max Runden/Stint</div></div>
+      <div class="stint-summary-cell"><div class="val" style="font-size:20px">${fmtTime(totalTime)}</div><div class="lbl">Gesamtzeit</div></div>
+    </div>
+    <div class="log-wrap"><table>
+      <thead><tr><th>#</th><th>Runden</th><th>Anz.</th><th>Fuel</th><th>Zeit</th><th>Aktion</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+let lapLog=[];
+function addLap() {
+  const v=parseFloat(document.getElementById('trLapFuel').value);
+  if(isNaN(v)) return;
+  lapLog.push(v);
+  document.getElementById('trLapFuel').value='';
+  renderTracker();
+}
+function resetTracker() { lapLog=[]; renderTracker(); }
+
+function renderTracker() {
+  const start=parseFloat(document.getElementById('trStart').value)||0;
+  const expFpl=parseFloat(document.getElementById('trExpFpl').value)||0;
+  const totLaps=parseInt(document.getElementById('trTotalLaps').value)||0;
+
+  const cur=lapLog.length;
+  const fuelLeft=cur===0?start:lapLog[cur-1];
+  let avgFpl='—', poss=String(Math.floor(fuelLeft/expFpl));
+
+  if(cur>0) {
+    const avg=(start-fuelLeft)/cur;
+    avgFpl=avg.toFixed(2);
+    poss=String(Math.floor(fuelLeft/avg));
+  }
+
+  set('trLap',cur);
+  set('trFuelLeft',fuelLeft.toFixed(1));
+  set('trAvg',avgFpl);
+  set('trPoss',poss);
+
+  const lapsLeft=totLaps-cur;
+  document.getElementById('trFuelLeft').style.color=fuelLeft<expFpl*3?'var(--accent)':'var(--text)';
+  document.getElementById('trPoss').style.color=parseInt(poss)<lapsLeft?'var(--accent)':'var(--text)';
+
+  if(!lapLog.length) { document.getElementById('lapLogWrap').innerHTML=''; return; }
+
+  const rows=lapLog.map((fuel,i)=>{
+    const prev=i===0?start:lapLog[i-1];
+    const used=prev-fuel;
+    const delta=used-expFpl;
+    const col=Math.abs(delta)<0.05?'inherit':delta>0?'var(--accent)':'#22c55e';
+    return `<tr><td>Runde ${i+1}</td><td>${fuel.toFixed(1)} L</td><td>${used.toFixed(2)} L</td><td style="color:${col}">${delta>=0?'+':''}${delta.toFixed(2)} L</td></tr>`;
+  }).join('');
+
+  document.getElementById('lapLogWrap').innerHTML=`
+    <div class="log-wrap"><table>
+      <thead><tr><th>Runde</th><th>Fuel danach</th><th>Verbraucht</th><th>Δ Erwartet</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+calc();
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+</script>
+</body>
+</html>

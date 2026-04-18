@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="#0a0a0a"/>
+
+  <!-- Fuel drop shape -->
+  <path d="M256 100 C256 100 160 220 160 300 C160 354 203 395 256 395 C309 395 352 354 352 300 C352 220 256 100 256 100Z" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="2"/>
+
+  <!-- Fuel level fill -->
+  <clipPath id="drop-clip">
+    <path d="M256 100 C256 100 160 220 160 300 C160 354 203 395 256 395 C309 395 352 354 352 300 C352 220 256 100 256 100Z"/>
+  </clipPath>
+  <rect x="160" y="290" width="192" height="110" fill="#e63018" clip-path="url(#drop-clip)"/>
+
+  <!-- Divider line inside drop -->
+  <line x1="160" y1="290" x2="352" y2="290" stroke="#0a0a0a" stroke-width="2.5" opacity="0.6"/>
+
+  <!-- "F" lettermark -->
+  <text x="256" y="272" text-anchor="middle" font-family="DM Sans, Arial, sans-serif" font-size="88" font-weight="700" fill="#f0f0ee" letter-spacing="-4">F</text>
+</svg>
