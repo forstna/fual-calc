@@ -39,9 +39,10 @@
   .version-tag { font-family: var(--mono); font-size: 10px; color: var(--muted2); letter-spacing: 0.08em; }
 
   nav { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
-  .nav-tab { padding: 12px 20px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; user-select: none; }
+  .nav-tab { padding: 12px 20px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border: 0; background: transparent; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; user-select: none; }
   .nav-tab:hover { color: var(--text); }
   .nav-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .nav-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
   .page { display: none; }
   .page.active { display: block; }
@@ -150,14 +151,14 @@
     <span class="version-tag">v2.0</span>
   </header>
 
-  <nav>
-    <div class="nav-tab active" onclick="switchTab('calc')">Calculator</div>
-    <div class="nav-tab" onclick="switchTab('stint')">Stint Planer</div>
-    <div class="nav-tab" onclick="switchTab('tracker')">Live Tracker</div>
+  <nav role="tablist" aria-label="Seiten">
+    <button type="button" class="nav-tab active" role="tab" aria-selected="true" aria-controls="page-calc" id="tab-calc" onclick="switchTab('calc')">Calculator</button>
+    <button type="button" class="nav-tab" role="tab" aria-selected="false" aria-controls="page-stint" id="tab-stint" onclick="switchTab('stint')">Stint Planer</button>
+    <button type="button" class="nav-tab" role="tab" aria-selected="false" aria-controls="page-tracker" id="tab-tracker" onclick="switchTab('tracker')">Live Tracker</button>
   </nav>
 
   <!-- CALCULATOR -->
-  <div id="page-calc" class="page active">
+  <div id="page-calc" class="page active" role="tabpanel" aria-labelledby="tab-calc">
     <div class="section">
       <div class="section-label">Presets</div>
       <div class="preset-row">
@@ -238,7 +239,7 @@
   </div>
 
   <!-- STINT PLANER -->
-  <div id="page-stint" class="page">
+  <div id="page-stint" class="page" role="tabpanel" aria-labelledby="tab-stint">
     <div class="section">
       <div class="section-label">Stint Konfiguration</div>
       <div class="field-row three">
@@ -255,7 +256,7 @@
   </div>
 
   <!-- LIVE TRACKER -->
-  <div id="page-tracker" class="page">
+  <div id="page-tracker" class="page" role="tabpanel" aria-labelledby="tab-tracker">
     <div class="section">
       <div class="section-label">Session</div>
       <div class="field-row three">
@@ -287,20 +288,36 @@
 <script>
 function parseLapTime(s) {
   s = (s||'').trim();
-  if (s.includes(':')) { const [m,sec]=s.split(':'); return parseFloat(m)*60+parseFloat(sec||0); }
-  return parseFloat(s)||0;
+  if (s.includes(':')) {
+    const [m, sec] = s.split(':');
+    const mins = parseFloat(m);
+    const secs = parseFloat(sec || 0);
+    const total = mins * 60 + secs;
+    return Number.isFinite(total) && total > 0 ? total : 0;
+  }
+  const total = parseFloat(s);
+  return Number.isFinite(total) && total > 0 ? total : 0;
 }
 function fmtTime(sec) {
-  const m=Math.floor(sec/60), s=String(Math.round(sec%60)).padStart(2,'0');
+  if (!Number.isFinite(sec) || sec < 0) return '—';
+  const rounded = Math.round(sec);
+  const m = Math.floor(rounded / 60);
+  const s = String(rounded % 60).padStart(2,'0');
   return m+':'+s;
 }
 function set(id,val) { document.getElementById(id).textContent=val; }
 
 function switchTab(name) {
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>{
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+  });
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  const order=['calc','stint','tracker'];
-  document.querySelectorAll('.nav-tab')[order.indexOf(name)].classList.add('active');
+  const tab = document.getElementById('tab-' + name);
+  if (tab) {
+    tab.classList.add('active');
+    tab.setAttribute('aria-selected', 'true');
+  }
   document.getElementById('page-'+name).classList.add('active');
   if(name==='stint') buildStint();
   if(name==='tracker') renderTracker();
@@ -335,24 +352,28 @@ function loadPreset(k) {
 function calc() {
   const mode  = document.getElementById('durationMode').value;
   const ltSec = parseLapTime(document.getElementById('lapTime').value);
-  const fpl   = parseFloat(document.getElementById('fuelPerLap').value)||0;
-  const tank  = parseFloat(document.getElementById('tankSize').value)||1;
+  const fplRaw = parseFloat(document.getElementById('fuelPerLap').value);
+  const tankRaw = parseFloat(document.getElementById('tankSize').value);
+  const fpl   = Number.isFinite(fplRaw) && fplRaw >= 0 ? fplRaw : 0;
+  const tank  = Number.isFinite(tankRaw) && tankRaw > 0 ? tankRaw : 0;
   const mg    = parseInt(document.getElementById('safetyMargin').value)||0;
 
   let raceLaps;
   if (mode==='time') {
-    const mins=parseFloat(document.getElementById('raceDuration').value)||0;
+    const minsRaw = parseFloat(document.getElementById('raceDuration').value);
+    const mins = Number.isFinite(minsRaw) && minsRaw > 0 ? minsRaw : 0;
     raceLaps = ltSec>0 ? Math.ceil(mins*60/ltSec) : 0;
   } else {
-    raceLaps=parseInt(document.getElementById('raceLaps').value)||0;
+    const lapsRaw = parseInt(document.getElementById('raceLaps').value, 10);
+    raceLaps = Number.isFinite(lapsRaw) && lapsRaw > 0 ? lapsRaw : 0;
   }
 
   const total    = raceLaps+mg;
   const fuelBase = raceLaps*fpl;
   const fuelTot  = total*fpl;
-  const pct      = fuelTot/tank*100;
-  const minPits  = Math.max(0,Math.ceil(fuelTot/tank)-1);
-  const overflow = fuelTot>tank;
+  const pct      = tank > 0 ? (fuelTot/tank*100) : 0;
+  const minPits  = tank > 0 ? Math.max(0,Math.ceil(fuelTot/tank)-1) : 0;
+  const overflow = tank > 0 ? fuelTot>tank : false;
 
   set('resFuelTotal', fuelTot.toFixed(1));
   set('resLaps',      raceLaps);
@@ -363,26 +384,48 @@ function calc() {
   set('resPits',      minPits);
 
   document.getElementById('resFuelTotal').className='result-big'+(overflow?' red':'');
-  document.getElementById('barMax').textContent=tank+' L';
-  document.getElementById('barLabel').textContent=fuelTot.toFixed(1)+' L / '+tank+' L';
+  document.getElementById('barMax').textContent=(tank || 0)+' L';
+  document.getElementById('barLabel').textContent=tank > 0
+    ? (fuelTot.toFixed(1)+' L / '+tank+' L')
+    : 'Ungültige Tankgröße';
 
   const bar=document.getElementById('fuelBarFill');
   bar.style.width=Math.min(pct,100)+'%';
   bar.style.background=pct<70?'#22c55e':pct<90?'#f59e0b':'#e63018';
 
-  document.getElementById('calcWarning').innerHTML=overflow
-    ? `<div class="warning"><div class="warning-dot"></div>Tank zu klein — ${fuelTot.toFixed(1)} L benötigt, Kapazität ${tank} L. Mindestens ${minPits} Boxenstopp${minPits>1?'s':''} nötig.</div>`
-    : '';
+  const warnings = [];
+  if (tank <= 0) warnings.push('Bitte eine Tankgröße größer 0 angeben.');
+  if (fpl <= 0) warnings.push('Bitte einen Verbrauch größer 0 L/Runde angeben.');
+  if (mode === 'time' && ltSec <= 0) warnings.push('Bitte eine gültige Rundenzeit eingeben (z. B. 1:45).');
+  if (overflow) warnings.push(`Tank zu klein — ${fuelTot.toFixed(1)} L benötigt, Kapazität ${tank} L. Mindestens ${minPits} Boxenstopp${minPits>1?'s':''} nötig.`);
+
+  document.getElementById('calcWarning').innerHTML = warnings
+    .map(msg => `<div class="warning"><div class="warning-dot"></div>${msg}</div>`)
+    .join('');
 }
 
 function buildStint() {
-  const totalLaps=parseInt(document.getElementById('stLaps').value)||0;
-  const fpl=parseFloat(document.getElementById('stFpl').value)||0;
-  const tank=parseFloat(document.getElementById('stTank').value)||1;
+  const totalLapsRaw = parseInt(document.getElementById('stLaps').value, 10);
+  const fplRaw = parseFloat(document.getElementById('stFpl').value);
+  const tankRaw = parseFloat(document.getElementById('stTank').value);
+  const totalLaps = Number.isFinite(totalLapsRaw) && totalLapsRaw > 0 ? totalLapsRaw : 0;
+  const fpl = Number.isFinite(fplRaw) && fplRaw > 0 ? fplRaw : 0;
+  const tank = Number.isFinite(tankRaw) && tankRaw > 0 ? tankRaw : 0;
   const ltSec=parseLapTime(document.getElementById('stLapTime').value);
   const pitLoss=parseFloat(document.getElementById('stPitLoss').value)||0;
 
+  if (totalLaps <= 0 || fpl <= 0 || tank <= 0 || ltSec <= 0) {
+    document.getElementById('stintOutput').innerHTML =
+      '<div class="warning"><div class="warning-dot"></div>Bitte gültige Werte eingeben: Runden > 0, Verbrauch > 0, Tank > 0 und Rundenzeit im Format mm:ss.</div>';
+    return;
+  }
+
   const maxLaps=Math.floor(tank/fpl);
+  if (maxLaps < 1) {
+    document.getElementById('stintOutput').innerHTML =
+      '<div class="warning"><div class="warning-dot"></div>Mit diesen Werten ist kein gültiger Stint möglich (Tank < Verbrauch pro Runde).</div>';
+    return;
+  }
   const stints=[]; let done=0,num=1;
   while(done<totalLaps) {
     const laps=Math.min(maxLaps,totalLaps-done);
@@ -415,7 +458,7 @@ function buildStint() {
 let lapLog=[];
 function addLap() {
   const v=parseFloat(document.getElementById('trLapFuel').value);
-  if(isNaN(v)) return;
+  if(!Number.isFinite(v) || v < 0) return;
   lapLog.push(v);
   document.getElementById('trLapFuel').value='';
   renderTracker();
@@ -423,18 +466,24 @@ function addLap() {
 function resetTracker() { lapLog=[]; renderTracker(); }
 
 function renderTracker() {
-  const start=parseFloat(document.getElementById('trStart').value)||0;
-  const expFpl=parseFloat(document.getElementById('trExpFpl').value)||0;
-  const totLaps=parseInt(document.getElementById('trTotalLaps').value)||0;
+  const startRaw = parseFloat(document.getElementById('trStart').value);
+  const expFplRaw = parseFloat(document.getElementById('trExpFpl').value);
+  const totalLapsRaw = parseInt(document.getElementById('trTotalLaps').value, 10);
+  const start = Number.isFinite(startRaw) && startRaw >= 0 ? startRaw : 0;
+  const expFpl = Number.isFinite(expFplRaw) && expFplRaw > 0 ? expFplRaw : 0;
+  const totLaps = Number.isFinite(totalLapsRaw) && totalLapsRaw >= 0 ? totalLapsRaw : 0;
 
   const cur=lapLog.length;
   const fuelLeft=cur===0?start:lapLog[cur-1];
-  let avgFpl='—', poss=String(Math.floor(fuelLeft/expFpl));
+  let avgFpl='—';
+  let poss = expFpl > 0 ? String(Math.floor(fuelLeft/expFpl)) : '—';
 
   if(cur>0) {
     const avg=(start-fuelLeft)/cur;
-    avgFpl=avg.toFixed(2);
-    poss=String(Math.floor(fuelLeft/avg));
+    if (Number.isFinite(avg) && avg > 0) {
+      avgFpl=avg.toFixed(2);
+      poss=String(Math.floor(fuelLeft/avg));
+    }
   }
 
   set('trLap',cur);
@@ -443,8 +492,9 @@ function renderTracker() {
   set('trPoss',poss);
 
   const lapsLeft=totLaps-cur;
-  document.getElementById('trFuelLeft').style.color=fuelLeft<expFpl*3?'var(--accent)':'var(--text)';
-  document.getElementById('trPoss').style.color=parseInt(poss)<lapsLeft?'var(--accent)':'var(--text)';
+  const possNum = parseInt(poss, 10);
+  document.getElementById('trFuelLeft').style.color=expFpl > 0 && fuelLeft<expFpl*3?'var(--accent)':'var(--text)';
+  document.getElementById('trPoss').style.color=Number.isFinite(possNum) && possNum<lapsLeft?'var(--accent)':'var(--text)';
 
   if(!lapLog.length) { document.getElementById('lapLogWrap').innerHTML=''; return; }
 
