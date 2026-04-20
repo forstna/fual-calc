@@ -172,3 +172,105 @@ if (failed.length > 0) {
 } else {
   console.log('\nAlle 10 Szenarien bestanden.');
 }
+
+function buildStintCalc(input) {
+  const totalLapsRaw = Number.parseInt(input.totalLaps, 10);
+  const fplRaw = Number.parseFloat(input.fpl);
+  const tankRaw = Number.parseFloat(input.tank);
+  const pitLossRaw = Number.parseFloat(input.pitLoss);
+  const ltSec = parseLapTime(input.lapTime);
+
+  const totalLaps = Number.isFinite(totalLapsRaw) && totalLapsRaw > 0 ? totalLapsRaw : 0;
+  const fpl = Number.isFinite(fplRaw) && fplRaw > 0 ? fplRaw : 0;
+  const tank = Number.isFinite(tankRaw) && tankRaw > 0 ? tankRaw : 0;
+  const pitLoss = Number.isFinite(pitLossRaw) ? pitLossRaw : 0;
+
+  if (totalLaps <= 0 || fpl <= 0 || tank <= 0 || ltSec <= 0) {
+    return { valid: false, reason: 'invalid-input' };
+  }
+
+  const maxLaps = Math.floor(tank / fpl);
+  if (maxLaps < 1) return { valid: false, reason: 'no-valid-stint' };
+
+  const stints = [];
+  let done = 0;
+  while (done < totalLaps) {
+    const laps = Math.min(maxLaps, totalLaps - done);
+    stints.push({ laps, fuel: laps * fpl, time: laps * ltSec });
+    done += laps;
+  }
+
+  const pits = stints.length - 1;
+  const totalTime = stints.reduce((s, x, i) => s + x.time + (i > 0 ? pitLoss : 0), 0);
+  return { valid: true, maxLaps, pits, stints, totalTime };
+}
+
+function trackerCalc(input, lapLog) {
+  const startRaw = Number.parseFloat(input.start);
+  const expFplRaw = Number.parseFloat(input.expFpl);
+  const totalLapsRaw = Number.parseInt(input.totalLaps, 10);
+  const start = Number.isFinite(startRaw) && startRaw >= 0 ? startRaw : 0;
+  const expFpl = Number.isFinite(expFplRaw) && expFplRaw > 0 ? expFplRaw : 0;
+  const totalLaps = Number.isFinite(totalLapsRaw) && totalLapsRaw >= 0 ? totalLapsRaw : 0;
+
+  const cur = lapLog.length;
+  const fuelLeft = cur === 0 ? start : lapLog[cur - 1];
+  let avgFpl = null;
+  let possibleLaps = expFpl > 0 ? Math.floor(fuelLeft / expFpl) : null;
+
+  if (cur > 0) {
+    const avg = (start - fuelLeft) / cur;
+    if (Number.isFinite(avg) && avg > 0) {
+      avgFpl = avg;
+      possibleLaps = Math.floor(fuelLeft / avg);
+    }
+  }
+
+  return {
+    currentLap: cur,
+    fuelLeft,
+    avgFpl,
+    possibleLaps,
+    lapsLeft: totalLaps - cur,
+  };
+}
+
+const stintScenarios = [
+  { id: 'ST1', input: { totalLaps: 60, fpl: 2.8, tank: 75, lapTime: '1:45', pitLoss: 28 }, expect: { valid: true, maxLaps: 26, pits: 2 } },
+  { id: 'ST2', input: { totalLaps: 10, fpl: 3.0, tank: 8, lapTime: '1:40', pitLoss: 25 }, expect: { valid: true, maxLaps: 2, pits: 4 } },
+  { id: 'ST3', input: { totalLaps: 30, fpl: 0, tank: 60, lapTime: '1:35', pitLoss: 20 }, expect: { valid: false, reason: 'invalid-input' } },
+  { id: 'ST4', input: { totalLaps: 30, fpl: 5.5, tank: 4, lapTime: '1:35', pitLoss: 20 }, expect: { valid: false, reason: 'no-valid-stint' } },
+];
+
+const trackerScenarios = [
+  { id: 'TR1', input: { start: 50, expFpl: 2.8, totalLaps: 20 }, lapLog: [], expect: { currentLap: 0, fuelLeft: 50, possibleLaps: 17 } },
+  { id: 'TR2', input: { start: 50, expFpl: 2.8, totalLaps: 20 }, lapLog: [47.2, 44.3, 41.4], expect: { currentLap: 3, fuelLeft: 41.4, possibleLaps: 14 } },
+  { id: 'TR3', input: { start: 60, expFpl: 3.0, totalLaps: 30 }, lapLog: [57.5, 55.1, 52.6, 50.0], expect: { currentLap: 4, fuelLeft: 50.0, possibleLaps: 20 } },
+];
+
+const stintResults = stintScenarios.map((s) => {
+  const out = buildStintCalc(s.input);
+  const checks = [];
+  checks.push(out.valid === s.expect.valid);
+  if (typeof s.expect.maxLaps === 'number') checks.push(out.maxLaps === s.expect.maxLaps);
+  if (typeof s.expect.pits === 'number') checks.push(out.pits === s.expect.pits);
+  if (typeof s.expect.reason === 'string') checks.push(out.reason === s.expect.reason);
+  return { id: s.id, pass: checks.every(Boolean) };
+});
+
+const trackerResults = trackerScenarios.map((s) => {
+  const out = trackerCalc(s.input, s.lapLog);
+  const checks = [];
+  checks.push(out.currentLap === s.expect.currentLap);
+  checks.push(almostEqual(out.fuelLeft, s.expect.fuelLeft));
+  checks.push(out.possibleLaps === s.expect.possibleLaps);
+  return { id: s.id, pass: checks.every(Boolean) };
+});
+
+console.log('\nSeiten-Checks (Stint + Live Tracker)');
+for (const r of stintResults) console.log(`${r.id}: ${r.pass ? 'PASS' : 'FAIL'}`);
+for (const r of trackerResults) console.log(`${r.id}: ${r.pass ? 'PASS' : 'FAIL'}`);
+
+if (stintResults.some((r) => !r.pass) || trackerResults.some((r) => !r.pass)) {
+  process.exitCode = 1;
+}
