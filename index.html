@@ -2,13 +2,11 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Fuel — iRacing Calculator</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9335925425668739" crossorigin="anonymous"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -24,12 +22,12 @@
     --accent-bg: rgba(230,48,24,0.08);
     --green:     #22c55e;
     --amber:     #f59e0b;
-    --mono:      'DM Mono', monospace;
-    --sans:      'DM Sans', sans-serif;
+    --mono:      ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans:      -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   }
   html { font-size: 16px; }
-  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-weight: 400; line-height: 1.45; min-height: 100vh; }
-  .shell { max-width: 680px; margin: 0 auto; padding: 0 24px 36px; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-weight: 400; line-height: 1.45; min-height: 100vh; -webkit-tap-highlight-color: transparent; }
+  .shell { max-width: 680px; margin: 0 auto; padding: max(8px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); }
 
   header { padding: 24px 0 16px; border-bottom: 1px solid var(--border); margin-bottom: 16px; display: flex; align-items: flex-end; justify-content: space-between; }
   .wordmark { display: flex; flex-direction: column; gap: 4px; }
@@ -80,8 +78,13 @@
   input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
 
   .preset-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-  .preset-btn { font-family: var(--mono); font-size: 12px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--muted); cursor: pointer; transition: all 0.15s; letter-spacing: 0.04em; }
+  .preset-btn { font-family: var(--mono); font-size: 12px; padding: 8px 10px; min-height: 36px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--muted); cursor: pointer; transition: all 0.15s; letter-spacing: 0.04em; }
   .preset-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+  .preset-input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .preset-input-row input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; font-family: var(--mono); font-size: 15px; color: var(--text); }
+  .session-restore { display: none; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  .session-restore.show { display: flex; }
+  .session-restore-text { font-size: 13px; color: var(--muted); }
 
   .result-block { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-top: 8px; }
   .result-main { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
@@ -127,14 +130,13 @@
   .lap-input-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 12px; }
   .lap-input-row .field { flex: 1; }
 
-  .btn { padding: 10px 14px; border-radius: 6px; font-family: var(--sans); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 1px solid; white-space: nowrap; }
+  .btn { padding: 10px 14px; min-height: 42px; border-radius: 6px; font-family: var(--sans); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 1px solid; white-space: nowrap; }
   .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   .btn-primary:hover { background: #c8270f; border-color: #c8270f; }
   .btn-ghost { background: transparent; border-color: var(--border); color: var(--muted); }
   .btn-ghost:hover { border-color: var(--text); color: var(--text); }
 
   @media (max-width: 520px) {
-    body { overflow: hidden; }
     .shell {
       height: 100dvh;
       padding: 0 12px 10px;
@@ -160,7 +162,7 @@
     .page.active {
       display: block;
       flex: 1;
-      overflow: hidden;
+      overflow: auto;
     }
     .section { margin-bottom: 10px; }
     .section-label { margin-bottom: 6px; }
@@ -198,7 +200,7 @@
     .live-card-val { font-size: 32px; margin-bottom: 3px; }
     .live-card-lbl { font-size: 11px; }
     .lap-input-row { gap: 8px; margin-bottom: 8px; }
-    .btn { font-size: 14px; padding: 9px 10px; }
+    .btn { font-size: 14px; padding: 9px 10px; min-height: 44px; }
     .log-wrap { max-height: 22dvh; overflow: auto; }
     .field-row.three { grid-template-columns: 1fr 1fr; }
     .stint-summary { grid-template-columns: 1fr 1fr; }
@@ -226,6 +228,18 @@
   <!-- CALCULATOR -->
   <div id="page-calc" class="page active" role="tabpanel" aria-labelledby="tab-calc">
     <div class="section">
+      <div class="section-label">Quick Start</div>
+      <div class="preset-row">
+        <button class="preset-btn" onclick="applyQuickStart('gt3sprint')">GT3 Sprint</button>
+        <button class="preset-btn" onclick="applyQuickStart('gt3endurance')">GT3 Endurance</button>
+        <button class="preset-btn" onclick="applyQuickStart('gt4')">GT4</button>
+        <button class="preset-btn" onclick="applyQuickStart('f3')">Formula 3</button>
+        <button class="preset-btn" onclick="applyQuickStart('30min')">30 min</button>
+        <button class="preset-btn" onclick="applyQuickStart('60min')">60 min</button>
+      </div>
+    </div>
+
+    <div class="section">
       <div class="section-label">Presets</div>
       <div class="preset-row">
         <button class="preset-btn" onclick="loadPreset('sprint')">Sprint 30 min</button>
@@ -233,6 +247,14 @@
         <button class="preset-btn" onclick="loadPreset('f3')">Formula 3</button>
         <button class="preset-btn" onclick="loadPreset('gt3')">GT3</button>
         <button class="preset-btn" onclick="loadPreset('gt4')">GT4</button>
+      </div>
+      <div class="preset-input-row">
+        <input id="customPresetName" type="text" placeholder="Preset name (z. B. Spa Nacht)">
+        <button class="btn btn-ghost" type="button" onclick="saveCurrentAsPreset()">Save Preset</button>
+      </div>
+      <div class="preset-row" id="customPresetsRow"></div>
+      <div class="preset-row">
+        <button class="btn btn-ghost" type="button" onclick="shareCurrentPreset()">Share Preset</button>
       </div>
     </div>
 
@@ -301,6 +323,9 @@
         <div class="fuel-bar-track"><div class="fuel-bar-fill" id="fuelBarFill"></div></div>
       </div>
       <div id="calcWarning"></div>
+      <div class="preset-row" style="margin-top:12px;">
+        <button class="btn btn-ghost" type="button" onclick="shareResultSummary()">Share Result</button>
+      </div>
     </div>
   </div>
 
@@ -325,6 +350,13 @@
   <div id="page-tracker" class="page" role="tabpanel" aria-labelledby="tab-tracker">
     <div class="section">
       <div class="section-label">Session</div>
+      <div id="sessionRestoreBar" class="session-restore">
+        <span class="session-restore-text">Unfinished session found.</span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-primary" type="button" onclick="continueSavedSession()">Continue</button>
+          <button class="btn btn-ghost" type="button" onclick="discardSavedSession()">Discard</button>
+        </div>
+      </div>
       <div class="field-row three">
         <div class="field"><label>Starttankfüllung (L)</label><input type="number" id="trStart" value="50" oninput="renderTracker()"></div>
         <div class="field"><label>Erw. Verbrauch / Runde</label><input type="number" id="trExpFpl" value="2.8" step="0.01" oninput="renderTracker()"></div>
@@ -352,12 +384,96 @@
 </div>
 
 <script>
+// Native runtime guard for iOS/Capacitor WebView.
+function isNativeCapacitorRuntime() {
+  if (window.Capacitor && window.Capacitor.isNativePlatform) {
+    try { return !!window.Capacitor.isNativePlatform(); } catch (_) {}
+  }
+  return !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.bridge);
+}
+const IS_NATIVE_CAPACITOR = isNativeCapacitorRuntime();
+
+// WebKit can blank the view if a JS dialog appears before first paint in native shells.
+if (IS_NATIVE_CAPACITOR) {
+  window.alert = function (msg) { console.warn('Suppressed alert in native runtime:', msg); };
+  window.confirm = function () { return false; };
+  window.prompt = function () { return ''; };
+
+  // Native app is self-contained; service workers are unnecessary and can cause stale blank states.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations()
+      .then(function (regs) { return Promise.all(regs.map(function (r) { return r.unregister(); })); })
+      .catch(function () {});
+  }
+  if ('caches' in window) {
+    caches.keys()
+      .then(function (keys) { return Promise.all(keys.map(function (k) { return caches.delete(k); })); })
+      .catch(function () {});
+  }
+}
+
+const STORAGE_KEYS = {
+  appState: 'fuelcalc:appState',
+  presets: 'fuelcalc:presets',
+  session: 'fuelcalc:session',
+  recentSessions: 'fuelcalc:recentSessions'
+};
+
+let lapLog = [];
+let pendingSession = null;
+
+function safeParse(json, fallback) {
+  try { return JSON.parse(json); } catch (_) { return fallback; }
+}
+function readStorage(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? safeParse(raw, fallback) : fallback;
+  } catch (_) {
+    return fallback;
+  }
+}
+function writeStorage(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {}
+}
+
+function loadAppState() {
+  return readStorage(STORAGE_KEYS.appState, {});
+}
+function saveAppState(nextState) {
+  const prev = loadAppState();
+  writeStorage(STORAGE_KEYS.appState, Object.assign({}, prev, nextState));
+}
+function loadPresets() {
+  return readStorage(STORAGE_KEYS.presets, []);
+}
+function savePresets(presets) {
+  writeStorage(STORAGE_KEYS.presets, presets);
+}
+function loadSession() {
+  return readStorage(STORAGE_KEYS.session, null);
+}
+function saveSession(session) {
+  writeStorage(STORAGE_KEYS.session, session);
+}
+function usePersistentState(key, initialValue) {
+  let value = readStorage(key, initialValue);
+  return {
+    get: function () { return value; },
+    set: function (next) {
+      value = typeof next === 'function' ? next(value) : next;
+      writeStorage(key, value);
+      return value;
+    }
+  };
+}
+
 function parseLapTime(s) {
-  s = (s||'').trim();
+  s = (s || '').trim();
   if (s.includes(':')) {
-    const [m, sec] = s.split(':');
-    const mins = parseFloat(m);
-    const secs = parseFloat(sec || 0);
+    const parts = s.split(':');
+    const mins = parseFloat(parts[0]);
+    const secs = parseFloat(parts[1] || 0);
     const total = mins * 60 + secs;
     return Number.isFinite(total) && total > 0 ? total : 0;
   }
@@ -368,108 +484,275 @@ function fmtTime(sec) {
   if (!Number.isFinite(sec) || sec < 0) return '—';
   const rounded = Math.round(sec);
   const m = Math.floor(rounded / 60);
-  const s = String(rounded % 60).padStart(2,'0');
-  return m+':'+s;
+  const s = String(rounded % 60).padStart(2, '0');
+  return m + ':' + s;
 }
-function set(id,val) { document.getElementById(id).textContent=val; }
+function set(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+// Capacitor-native helpers are optional and only used when running in the iOS shell.
+function getCapacitorPlugin(name) {
+  const plugins = window.Capacitor && window.Capacitor.Plugins;
+  return plugins && plugins[name] ? plugins[name] : null;
+}
+async function nativeHaptic(kind) {
+  const Haptics = getCapacitorPlugin('Haptics');
+  if (!Haptics) return;
+  try {
+    if (kind === 'impact') await Haptics.impact({ style: 'light' });
+    if (kind === 'notification') await Haptics.notification({ type: 'success' });
+  } catch (_) {}
+}
+async function nativeShare(title, text) {
+  const Share = getCapacitorPlugin('Share');
+  if (!Share) return false;
+  try {
+    await Share.share({ title: title, text: text, dialogTitle: title });
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function getCalculatorInputs() {
+  return {
+    durationMode: document.getElementById('durationMode').value,
+    raceDuration: document.getElementById('raceDuration').value,
+    raceLaps: document.getElementById('raceLaps').value,
+    lapTime: document.getElementById('lapTime').value,
+    fuelPerLap: document.getElementById('fuelPerLap').value,
+    tankSize: document.getElementById('tankSize').value,
+    safetyMargin: document.getElementById('safetyMargin').value
+  };
+}
+function getStintInputs() {
+  return {
+    stLaps: document.getElementById('stLaps').value,
+    stFpl: document.getElementById('stFpl').value,
+    stTank: document.getElementById('stTank').value,
+    stLapTime: document.getElementById('stLapTime').value,
+    stPitLoss: document.getElementById('stPitLoss').value
+  };
+}
+function getTrackerInputs() {
+  return {
+    trStart: document.getElementById('trStart').value,
+    trExpFpl: document.getElementById('trExpFpl').value,
+    trTotalLaps: document.getElementById('trTotalLaps').value
+  };
+}
+function applyInputs(values) {
+  if (!values) return;
+  Object.keys(values).forEach(function (id) {
+    const el = document.getElementById(id);
+    if (el && values[id] !== undefined && values[id] !== null) el.value = values[id];
+  });
+}
+
+function persistInputs() {
+  saveAppState({
+    activeTab: getActiveTab(),
+    calculator: getCalculatorInputs(),
+    stint: getStintInputs(),
+    tracker: getTrackerInputs()
+  });
+}
+function getActiveTab() {
+  const active = document.querySelector('.nav-tab.active');
+  return active ? active.id.replace('tab-', '') : 'calc';
+}
 
 function switchTab(name) {
-  document.querySelectorAll('.nav-tab').forEach(t=>{
+  document.querySelectorAll('.nav-tab').forEach(function (t) {
     t.classList.remove('active');
     t.setAttribute('aria-selected', 'false');
   });
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function (p) { p.classList.remove('active'); });
   const tab = document.getElementById('tab-' + name);
   if (tab) {
     tab.classList.add('active');
     tab.setAttribute('aria-selected', 'true');
   }
-  document.getElementById('page-'+name).classList.add('active');
-  if(name==='stint') buildStint();
-  if(name==='tracker') renderTracker();
+  document.getElementById('page-' + name).classList.add('active');
+  saveAppState({ activeTab: name });
+  if (name === 'stint') buildStint();
+  if (name === 'tracker') renderTracker();
 }
 
 function toggleDurMode() {
-  const byTime = document.getElementById('durationMode').value==='time';
+  const byTime = document.getElementById('durationMode').value === 'time';
   document.getElementById('durTimeField').style.display = byTime ? '' : 'none';
   document.getElementById('durLapsField').style.display = byTime ? 'none' : '';
   calc();
 }
 
 const PRESETS = {
-  sprint: {min:30,lt:'1:30',fpl:2.2,tank:50,mg:1},
-  '60':   {min:60,lt:'1:45',fpl:2.8,tank:75,mg:2},
-  f3:     {min:45,lt:'1:22',fpl:1.8,tank:45,mg:1},
-  gt3:    {min:60,lt:'2:05',fpl:3.2,tank:100,mg:2},
-  gt4:    {min:60,lt:'2:15',fpl:3.0,tank:90,mg:2},
+  sprint: { min: 30, lt: '1:30', fpl: 2.2, tank: 50, mg: 1 },
+  '60': { min: 60, lt: '1:45', fpl: 2.8, tank: 75, mg: 2 },
+  f3: { min: 45, lt: '1:22', fpl: 1.8, tank: 45, mg: 1 },
+  gt3: { min: 60, lt: '2:05', fpl: 3.2, tank: 100, mg: 2 },
+  gt4: { min: 60, lt: '2:15', fpl: 3.0, tank: 90, mg: 2 }
 };
-function loadPreset(k) {
-  const p=PRESETS[k];
-  document.getElementById('durationMode').value='time'; toggleDurMode();
-  document.getElementById('raceDuration').value=p.min;
-  document.getElementById('lapTime').value=p.lt;
-  document.getElementById('fuelPerLap').value=p.fpl;
-  document.getElementById('tankSize').value=p.tank;
-  document.getElementById('safetyMargin').value=p.mg;
-  document.getElementById('marginLabel').textContent=p.mg;
+const QUICK_STARTS = {
+  gt3sprint: { min: 30, lt: '2:05', fpl: 3.2, tank: 100, mg: 1 },
+  gt3endurance: { min: 60, lt: '2:05', fpl: 3.2, tank: 100, mg: 2 },
+  gt4: { min: 60, lt: '2:15', fpl: 3.0, tank: 90, mg: 2 },
+  f3: { min: 45, lt: '1:22', fpl: 1.8, tank: 45, mg: 1 },
+  '30min': { min: 30 },
+  '60min': { min: 60 }
+};
+
+function applyPresetValues(p) {
+  if (!p) return;
+  document.getElementById('durationMode').value = 'time';
+  toggleDurMode();
+  if (p.min !== undefined) document.getElementById('raceDuration').value = p.min;
+  if (p.lt !== undefined) document.getElementById('lapTime').value = p.lt;
+  if (p.fpl !== undefined) document.getElementById('fuelPerLap').value = p.fpl;
+  if (p.tank !== undefined) document.getElementById('tankSize').value = p.tank;
+  if (p.mg !== undefined) {
+    document.getElementById('safetyMargin').value = p.mg;
+    document.getElementById('marginLabel').textContent = p.mg;
+  }
   calc();
+}
+function loadPreset(k) {
+  applyPresetValues(PRESETS[k]);
+  nativeHaptic('impact');
+}
+function applyQuickStart(k) {
+  applyPresetValues(QUICK_STARTS[k]);
+  nativeHaptic('impact');
+}
+
+function currentPresetPayload() {
+  return {
+    min: parseFloat(document.getElementById('raceDuration').value) || 0,
+    lt: document.getElementById('lapTime').value || '',
+    fpl: parseFloat(document.getElementById('fuelPerLap').value) || 0,
+    tank: parseFloat(document.getElementById('tankSize').value) || 0,
+    mg: parseInt(document.getElementById('safetyMargin').value, 10) || 0
+  };
+}
+function renderCustomPresets() {
+  const row = document.getElementById('customPresetsRow');
+  const presets = loadPresets();
+  if (!presets.length) {
+    row.innerHTML = '<span class="section-label" style="margin:2px 0 0;">No custom presets saved</span>';
+    return;
+  }
+  row.innerHTML = presets.map(function (p, idx) {
+    return '<button class="preset-btn" onclick="loadCustomPreset(' + idx + ')">' + p.name + '</button>' +
+      '<button class="preset-btn" onclick="deleteCustomPreset(' + idx + ')" aria-label="Delete ' + p.name + '">x</button>';
+  }).join('');
+}
+function saveCurrentAsPreset() {
+  const input = document.getElementById('customPresetName');
+  const name = (input.value || '').trim();
+  const finalName = name || ('Preset ' + new Date().toLocaleTimeString());
+  const presets = loadPresets();
+  presets.unshift({ id: Date.now(), name: finalName, data: currentPresetPayload() });
+  savePresets(presets.slice(0, 20));
+  input.value = '';
+  renderCustomPresets();
+  nativeHaptic('notification');
+}
+function loadCustomPreset(idx) {
+  const presets = loadPresets();
+  const preset = presets[idx];
+  if (!preset) return;
+  applyPresetValues(preset.data);
+  nativeHaptic('impact');
+}
+function deleteCustomPreset(idx) {
+  const presets = loadPresets();
+  if (!presets[idx]) return;
+  presets.splice(idx, 1);
+  savePresets(presets);
+  renderCustomPresets();
+}
+
+function shareResultSummary() {
+  const text = [
+    'Fuel Result',
+    'Total fuel: ' + document.getElementById('resFuelTotal').textContent + ' L',
+    'Race laps: ' + document.getElementById('resLaps').textContent,
+    'Total laps: ' + document.getElementById('resTotalLaps').textContent,
+    'Pit stops: ' + document.getElementById('resPits').textContent
+  ].join('\n');
+  nativeShare('Fuel Result', text);
+}
+function shareCurrentPreset() {
+  const p = currentPresetPayload();
+  const text = [
+    'Preset',
+    'Duration: ' + p.min + ' min',
+    'Lap time: ' + p.lt,
+    'Fuel/lap: ' + p.fpl + ' L',
+    'Tank: ' + p.tank + ' L',
+    'Margin: ' + p.mg + ' laps'
+  ].join('\n');
+  nativeShare('Fuel Preset', text);
 }
 
 function calc() {
-  const mode  = document.getElementById('durationMode').value;
+  const mode = document.getElementById('durationMode').value;
   const ltSec = parseLapTime(document.getElementById('lapTime').value);
   const fplRaw = parseFloat(document.getElementById('fuelPerLap').value);
   const tankRaw = parseFloat(document.getElementById('tankSize').value);
-  const fpl   = Number.isFinite(fplRaw) && fplRaw >= 0 ? fplRaw : 0;
-  const tank  = Number.isFinite(tankRaw) && tankRaw > 0 ? tankRaw : 0;
-  // Guard against manual/programmatische negative values (slider itself is min=0).
+  const fpl = Number.isFinite(fplRaw) && fplRaw >= 0 ? fplRaw : 0;
+  const tank = Number.isFinite(tankRaw) && tankRaw > 0 ? tankRaw : 0;
   const mgRaw = parseInt(document.getElementById('safetyMargin').value, 10);
-  const mg    = Number.isFinite(mgRaw) ? Math.max(0, mgRaw) : 0;
+  const mg = Number.isFinite(mgRaw) ? Math.max(0, mgRaw) : 0;
 
-  let raceLaps;
-  if (mode==='time') {
+  let raceLaps = 0;
+  if (mode === 'time') {
     const minsRaw = parseFloat(document.getElementById('raceDuration').value);
     const mins = Number.isFinite(minsRaw) && minsRaw > 0 ? minsRaw : 0;
-    raceLaps = ltSec>0 ? Math.ceil(mins*60/ltSec) : 0;
+    raceLaps = ltSec > 0 ? Math.ceil(mins * 60 / ltSec) : 0;
   } else {
     const lapsRaw = parseInt(document.getElementById('raceLaps').value, 10);
     raceLaps = Number.isFinite(lapsRaw) && lapsRaw > 0 ? lapsRaw : 0;
   }
 
-  const total    = raceLaps+mg;
-  const fuelBase = raceLaps*fpl;
-  const fuelTot  = total*fpl;
-  const pct      = tank > 0 ? (fuelTot/tank*100) : 0;
-  const minPits  = tank > 0 ? Math.max(0,Math.ceil(fuelTot/tank)-1) : 0;
-  const overflow = tank > 0 ? fuelTot>tank : false;
+  const total = raceLaps + mg;
+  const fuelBase = raceLaps * fpl;
+  const fuelTot = total * fpl;
+  const pct = tank > 0 ? (fuelTot / tank * 100) : 0;
+  const minPits = tank > 0 ? Math.max(0, Math.ceil(fuelTot / tank) - 1) : 0;
+  const overflow = tank > 0 ? fuelTot > tank : false;
 
   set('resFuelTotal', fuelTot.toFixed(1));
-  set('resLaps',      raceLaps);
+  set('resLaps', raceLaps);
   set('resTotalLaps', total);
-  set('resRaceTime',  fmtTime(raceLaps*ltSec));
-  set('resBaseFuel',  fuelBase.toFixed(1)+' L');
-  set('resPct',       pct.toFixed(0)+'%');
-  set('resPits',      minPits);
+  set('resRaceTime', fmtTime(raceLaps * ltSec));
+  set('resBaseFuel', fuelBase.toFixed(1) + ' L');
+  set('resPct', pct.toFixed(0) + '%');
+  set('resPits', minPits);
 
-  document.getElementById('resFuelTotal').className='result-big'+(overflow?' red':'');
-  document.getElementById('barMax').textContent=(tank || 0)+' L';
-  document.getElementById('barLabel').textContent=tank > 0
-    ? (fuelTot.toFixed(1)+' L / '+tank+' L')
+  document.getElementById('resFuelTotal').className = 'result-big' + (overflow ? ' red' : '');
+  document.getElementById('barMax').textContent = (tank || 0) + ' L';
+  document.getElementById('barLabel').textContent = tank > 0
+    ? (fuelTot.toFixed(1) + ' L / ' + tank + ' L')
     : 'Ungültige Tankgröße';
 
-  const bar=document.getElementById('fuelBarFill');
-  bar.style.width=Math.min(pct,100)+'%';
-  bar.style.background=pct<70?'#22c55e':pct<90?'#f59e0b':'#e63018';
+  const bar = document.getElementById('fuelBarFill');
+  bar.style.width = Math.min(pct, 100) + '%';
+  bar.style.background = pct < 70 ? '#22c55e' : pct < 90 ? '#f59e0b' : '#e63018';
 
   const warnings = [];
   if (tank <= 0) warnings.push('Bitte eine Tankgröße größer 0 angeben.');
   if (fpl <= 0) warnings.push('Bitte einen Verbrauch größer 0 L/Runde angeben.');
   if (mode === 'time' && ltSec <= 0) warnings.push('Bitte eine gültige Rundenzeit eingeben (z. B. 1:45).');
-  if (overflow) warnings.push(`Tank zu klein — ${fuelTot.toFixed(1)} L benötigt, Kapazität ${tank} L. Mindestens ${minPits} Boxenstopp${minPits>1?'s':''} nötig.`);
+  if (overflow) warnings.push('Tank zu klein — ' + fuelTot.toFixed(1) + ' L benötigt, Kapazität ' + tank + ' L. Mindestens ' + minPits + ' Boxenstopp' + (minPits > 1 ? 's' : '') + ' nötig.');
 
   document.getElementById('calcWarning').innerHTML = warnings
-    .map(msg => `<div class="warning"><div class="warning-dot"></div>${msg}</div>`)
+    .map(function (msg) { return '<div class="warning"><div class="warning-dot"></div>' + msg + '</div>'; })
     .join('');
+
+  persistInputs();
 }
 
 function buildStint() {
@@ -479,59 +762,89 @@ function buildStint() {
   const totalLaps = Number.isFinite(totalLapsRaw) && totalLapsRaw > 0 ? totalLapsRaw : 0;
   const fpl = Number.isFinite(fplRaw) && fplRaw > 0 ? fplRaw : 0;
   const tank = Number.isFinite(tankRaw) && tankRaw > 0 ? tankRaw : 0;
-  const ltSec=parseLapTime(document.getElementById('stLapTime').value);
-  const pitLoss=parseFloat(document.getElementById('stPitLoss').value)||0;
+  const ltSec = parseLapTime(document.getElementById('stLapTime').value);
+  const pitLoss = parseFloat(document.getElementById('stPitLoss').value) || 0;
 
   if (totalLaps <= 0 || fpl <= 0 || tank <= 0 || ltSec <= 0) {
-    document.getElementById('stintOutput').innerHTML =
-      '<div class="warning"><div class="warning-dot"></div>Bitte gültige Werte eingeben: Runden > 0, Verbrauch > 0, Tank > 0 und Rundenzeit im Format mm:ss.</div>';
+    document.getElementById('stintOutput').innerHTML = '<div class="warning"><div class="warning-dot"></div>Bitte gültige Werte eingeben: Runden > 0, Verbrauch > 0, Tank > 0 und Rundenzeit im Format mm:ss.</div>';
+    persistInputs();
     return;
   }
 
-  const maxLaps=Math.floor(tank/fpl);
+  const maxLaps = Math.floor(tank / fpl);
   if (maxLaps < 1) {
-    document.getElementById('stintOutput').innerHTML =
-      '<div class="warning"><div class="warning-dot"></div>Mit diesen Werten ist kein gültiger Stint möglich (Tank < Verbrauch pro Runde).</div>';
+    document.getElementById('stintOutput').innerHTML = '<div class="warning"><div class="warning-dot"></div>Mit diesen Werten ist kein gültiger Stint möglich (Tank < Verbrauch pro Runde).</div>';
+    persistInputs();
     return;
   }
-  const stints=[]; let done=0,num=1;
-  while(done<totalLaps) {
-    const laps=Math.min(maxLaps,totalLaps-done);
-    stints.push({num,from:done+1,to:done+laps,laps,fuel:laps*fpl,time:laps*ltSec});
-    done+=laps; num++;
+  const stints = [];
+  let done = 0;
+  let num = 1;
+  while (done < totalLaps) {
+    const laps = Math.min(maxLaps, totalLaps - done);
+    stints.push({ num: num, from: done + 1, to: done + laps, laps: laps, fuel: laps * fpl, time: laps * ltSec });
+    done += laps;
+    num += 1;
   }
 
-  const totalTime=stints.reduce((s,x,i)=>s+x.time+(i>0?pitLoss:0),0);
-  const pits=stints.length-1;
+  const totalTime = stints.reduce(function (s, x, i) { return s + x.time + (i > 0 ? pitLoss : 0); }, 0);
+  const pits = stints.length - 1;
 
-  const rows=stints.map((s,i)=>`<tr>
-    <td>${s.num}</td><td>${s.from}–${s.to}</td><td>${s.laps}</td>
-    <td>${s.fuel.toFixed(1)} L</td><td>${fmtTime(s.time)}</td>
-    <td>${i<stints.length-1?'<span class="pit-tag">Pit Stop</span>':'<span class="finish-tag">Ziel ✓</span>'}</td>
-  </tr>`).join('');
+  const rows = stints.map(function (s, i) {
+    return '<tr><td>' + s.num + '</td><td>' + s.from + '–' + s.to + '</td><td>' + s.laps + '</td><td>' + s.fuel.toFixed(1) + ' L</td><td>' + fmtTime(s.time) + '</td><td>' + (i < stints.length - 1 ? '<span class="pit-tag">Pit Stop</span>' : '<span class="finish-tag">Ziel ✓</span>') + '</td></tr>';
+  }).join('');
 
-  document.getElementById('stintOutput').innerHTML=`
-    <div class="stint-summary">
-      <div class="stint-summary-cell"><div class="val ${pits>0?'accent':''}">${pits}</div><div class="lbl">Pit Stops</div></div>
-      <div class="stint-summary-cell"><div class="val">${stints.length}</div><div class="lbl">Stints</div></div>
-      <div class="stint-summary-cell"><div class="val">${maxLaps}</div><div class="lbl">Max Runden/Stint</div></div>
-      <div class="stint-summary-cell"><div class="val" style="font-size:20px">${fmtTime(totalTime)}</div><div class="lbl">Gesamtzeit</div></div>
-    </div>
-    <div class="log-wrap"><table>
-      <thead><tr><th>#</th><th>Runden</th><th>Anz.</th><th>Fuel</th><th>Zeit</th><th>Aktion</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div>`;
+  document.getElementById('stintOutput').innerHTML = '<div class="stint-summary"><div class="stint-summary-cell"><div class="val ' + (pits > 0 ? 'accent' : '') + '">' + pits + '</div><div class="lbl">Pit Stops</div></div><div class="stint-summary-cell"><div class="val">' + stints.length + '</div><div class="lbl">Stints</div></div><div class="stint-summary-cell"><div class="val">' + maxLaps + '</div><div class="lbl">Max Runden/Stint</div></div><div class="stint-summary-cell"><div class="val" style="font-size:20px">' + fmtTime(totalTime) + '</div><div class="lbl">Gesamtzeit</div></div></div><div class="log-wrap"><table><thead><tr><th>#</th><th>Runden</th><th>Anz.</th><th>Fuel</th><th>Zeit</th><th>Aktion</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  persistInputs();
 }
 
-let lapLog=[];
+function isUnfinishedSession(session) {
+  if (!session) return false;
+  const total = Number(session.inputs && session.inputs.trTotalLaps) || 0;
+  return Array.isArray(session.lapLog) && session.lapLog.length > 0 && (total === 0 || session.lapLog.length < total);
+}
+function updateSessionRestoreBar() {
+  const bar = document.getElementById('sessionRestoreBar');
+  bar.classList.toggle('show', !!pendingSession);
+}
+function saveCurrentSession() {
+  const payload = {
+    inputs: getTrackerInputs(),
+    lapLog: lapLog.slice(),
+    updatedAt: Date.now()
+  };
+  saveSession(payload);
+  const recent = readStorage(STORAGE_KEYS.recentSessions, []);
+  recent.unshift(payload);
+  writeStorage(STORAGE_KEYS.recentSessions, recent.slice(0, 5));
+  saveAppState({ lastActiveSession: payload.updatedAt });
+}
+function continueSavedSession() {
+  pendingSession = null;
+  updateSessionRestoreBar();
+  switchTab('tracker');
+}
+function discardSavedSession() {
+  pendingSession = null;
+  lapLog = [];
+  saveSession(null);
+  updateSessionRestoreBar();
+  renderTracker();
+  nativeHaptic('impact');
+}
+
 function addLap() {
-  const v=parseFloat(document.getElementById('trLapFuel').value);
-  if(!Number.isFinite(v) || v < 0) return;
+  const v = parseFloat(document.getElementById('trLapFuel').value);
+  if (!Number.isFinite(v) || v < 0) return;
   lapLog.push(v);
-  document.getElementById('trLapFuel').value='';
+  document.getElementById('trLapFuel').value = '';
   renderTracker();
 }
-function resetTracker() { lapLog=[]; renderTracker(); }
+function resetTracker() {
+  lapLog = [];
+  renderTracker();
+  nativeHaptic('impact');
+}
 
 function renderTracker() {
   const startRaw = parseFloat(document.getElementById('trStart').value);
@@ -541,51 +854,77 @@ function renderTracker() {
   const expFpl = Number.isFinite(expFplRaw) && expFplRaw > 0 ? expFplRaw : 0;
   const totLaps = Number.isFinite(totalLapsRaw) && totalLapsRaw >= 0 ? totalLapsRaw : 0;
 
-  const cur=lapLog.length;
-  const fuelLeft=cur===0?start:lapLog[cur-1];
-  let avgFpl='—';
-  let poss = expFpl > 0 ? String(Math.floor(fuelLeft/expFpl)) : '—';
+  const cur = lapLog.length;
+  const fuelLeft = cur === 0 ? start : lapLog[cur - 1];
+  let avgFpl = '—';
+  let poss = expFpl > 0 ? String(Math.floor(fuelLeft / expFpl)) : '—';
 
-  if(cur>0) {
-    const avg=(start-fuelLeft)/cur;
+  if (cur > 0) {
+    const avg = (start - fuelLeft) / cur;
     if (Number.isFinite(avg) && avg > 0) {
-      avgFpl=avg.toFixed(2);
-      poss=String(Math.floor(fuelLeft/avg));
+      avgFpl = avg.toFixed(2);
+      poss = String(Math.floor(fuelLeft / avg));
     }
   }
 
-  set('trLap',cur);
-  set('trFuelLeft',fuelLeft.toFixed(1));
-  set('trAvg',avgFpl);
-  set('trPoss',poss);
+  set('trLap', cur);
+  set('trFuelLeft', fuelLeft.toFixed(1));
+  set('trAvg', avgFpl);
+  set('trPoss', poss);
 
-  const lapsLeft=totLaps-cur;
+  const lapsLeft = totLaps - cur;
   const possNum = parseInt(poss, 10);
-  document.getElementById('trFuelLeft').style.color=expFpl > 0 && fuelLeft<expFpl*3?'var(--accent)':'var(--text)';
-  document.getElementById('trPoss').style.color=Number.isFinite(possNum) && possNum<lapsLeft?'var(--accent)':'var(--text)';
+  document.getElementById('trFuelLeft').style.color = expFpl > 0 && fuelLeft < expFpl * 3 ? 'var(--accent)' : 'var(--text)';
+  document.getElementById('trPoss').style.color = Number.isFinite(possNum) && possNum < lapsLeft ? 'var(--accent)' : 'var(--text)';
 
-  if(!lapLog.length) { document.getElementById('lapLogWrap').innerHTML=''; return; }
+  if (!lapLog.length) {
+    document.getElementById('lapLogWrap').innerHTML = '';
+    persistInputs();
+    saveCurrentSession();
+    return;
+  }
 
-  const rows=lapLog.map((fuel,i)=>{
-    const prev=i===0?start:lapLog[i-1];
-    const used=prev-fuel;
-    const delta=used-expFpl;
-    const col=Math.abs(delta)<0.05?'inherit':delta>0?'var(--accent)':'#22c55e';
-    return `<tr><td>Runde ${i+1}</td><td>${fuel.toFixed(1)} L</td><td>${used.toFixed(2)} L</td><td style="color:${col}">${delta>=0?'+':''}${delta.toFixed(2)} L</td></tr>`;
+  const rows = lapLog.map(function (fuel, i) {
+    const prev = i === 0 ? start : lapLog[i - 1];
+    const used = prev - fuel;
+    const delta = used - expFpl;
+    const col = Math.abs(delta) < 0.05 ? 'inherit' : delta > 0 ? 'var(--accent)' : '#22c55e';
+    return '<tr><td>Runde ' + (i + 1) + '</td><td>' + fuel.toFixed(1) + ' L</td><td>' + used.toFixed(2) + ' L</td><td style="color:' + col + '">' + (delta >= 0 ? '+' : '') + delta.toFixed(2) + ' L</td></tr>';
   }).join('');
 
-  document.getElementById('lapLogWrap').innerHTML=`
-    <div class="log-wrap"><table>
-      <thead><tr><th>Runde</th><th>Fuel danach</th><th>Verbraucht</th><th>Δ Erwartet</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div>`;
+  document.getElementById('lapLogWrap').innerHTML = '<div class="log-wrap"><table><thead><tr><th>Runde</th><th>Fuel danach</th><th>Verbraucht</th><th>Δ Erwartet</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  persistInputs();
+  saveCurrentSession();
 }
 
-calc();
+function restoreStateOnLoad() {
+  const persisted = loadAppState();
+  applyInputs(persisted.calculator);
+  applyInputs(persisted.stint);
+  applyInputs(persisted.tracker);
+  document.getElementById('marginLabel').textContent = document.getElementById('safetyMargin').value;
+  toggleDurMode();
+
+  const lastSession = loadSession();
+  if (lastSession) {
+    applyInputs(lastSession.inputs);
+    lapLog = Array.isArray(lastSession.lapLog) ? lastSession.lapLog.slice() : [];
+    if (isUnfinishedSession(lastSession)) pendingSession = lastSession;
+    updateSessionRestoreBar();
+  }
+
+  renderCustomPresets();
+  calc();
+  buildStint();
+  renderTracker();
+  if (persisted.activeTab) switchTab(persisted.activeTab);
+}
+
+restoreStateOnLoad();
 </script>
 
 <script>
-  if ('serviceWorker' in navigator) {
+  if ('serviceWorker' in navigator && !IS_NATIVE_CAPACITOR) {
     navigator.serviceWorker.register('/sw.js');
   }
 </script>

@@ -1,0 +1,9 @@
+{
+  "appId": "com.forstna.fuelcalc",
+  "appName": "Fuel — iRacing Calculator",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "iosScheme": "https"
+  }
+}

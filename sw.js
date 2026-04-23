@@ -1,5 +1,5 @@
-const CACHE = 'fuel-v2';
-const FILES = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+const CACHE = 'fuel-v3';
+const FILES = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png', '/sw.js'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -19,9 +19,23 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
   event.respondWith((async () => {
     const cached = await caches.match(event.request);
     if (cached) return cached;
-    return fetch(event.request);
+    try {
+      const fresh = await fetch(event.request);
+      const cache = await caches.open(CACHE);
+      cache.put(event.request, fresh.clone());
+      return fresh;
+    } catch (_) {
+      if (event.request.mode === 'navigate') {
+        const fallback = await caches.match('/index.html');
+        if (fallback) return fallback;
+      }
+      throw _;
+    }
   })());
 });
