@@ -85,6 +85,9 @@
   .session-restore { display: none; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
   .session-restore.show { display: flex; }
   .session-restore-text { font-size: 13px; color: var(--muted); }
+  .session-restore-actions { display: flex; gap: 8px; }
+  .app-note { display: none; margin-bottom: 10px; padding: 9px 11px; border: 1px solid rgba(245,158,11,0.35); border-radius: 8px; background: rgba(245,158,11,0.08); color: var(--amber); font-size: 13px; }
+  .app-note.show { display: block; }
 
   .result-block { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-top: 8px; }
   .result-main { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
@@ -175,7 +178,12 @@
     }
     .slider-field { margin-bottom: 6px; }
     .preset-row { margin-bottom: 6px; gap: 6px; }
-    .preset-btn { font-size: 12px; padding: 5px 8px; }
+    .preset-btn { font-size: 12px; padding: 8px 9px; min-height: 42px; }
+    .preset-input-row {
+      flex-direction: column;
+      gap: 8px;
+    }
+    .preset-input-row input { min-height: 44px; }
     .result-block { padding: 12px; margin-top: 4px; }
     .result-main { margin-bottom: 10px; }
     .result-big { font-size: 52px; }
@@ -216,7 +224,7 @@
       <span class="wordmark-top">iRacing Strategy</span>
       <span class="wordmark-name">Fuel<em>.</em></span>
     </div>
-    <span class="version-tag">v2.0</span>
+    <span class="version-tag">v2.1.1</span>
   </header>
 
   <nav role="tablist" aria-label="Seiten">
@@ -224,6 +232,8 @@
     <button type="button" class="nav-tab" role="tab" aria-selected="false" aria-controls="page-stint" id="tab-stint" onclick="switchTab('stint')">Stint Planer</button>
     <button type="button" class="nav-tab" role="tab" aria-selected="false" aria-controls="page-tracker" id="tab-tracker" onclick="switchTab('tracker')">Live Tracker</button>
   </nav>
+
+  <div id="appNote" class="app-note" role="status" aria-live="polite"></div>
 
   <!-- CALCULATOR -->
   <div id="page-calc" class="page active" role="tabpanel" aria-labelledby="tab-calc">
@@ -352,7 +362,7 @@
       <div class="section-label">Session</div>
       <div id="sessionRestoreBar" class="session-restore">
         <span class="session-restore-text">Unfinished session found.</span>
-        <div style="display:flex; gap:8px;">
+        <div class="session-restore-actions">
           <button class="btn btn-primary" type="button" onclick="continueSavedSession()">Continue</button>
           <button class="btn btn-ghost" type="button" onclick="discardSavedSession()">Discard</button>
         </div>
@@ -434,7 +444,13 @@ function readStorage(key, fallback) {
   }
 }
 function writeStorage(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {}
+  try {
+    if (value === null) {
+      localStorage.removeItem(key);
+      return;
+    }
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (_) {}
 }
 
 function loadAppState() {
@@ -487,9 +503,23 @@ function fmtTime(sec) {
   const s = String(rounded % 60).padStart(2, '0');
   return m + ':' + s;
 }
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 function set(id, val) {
   const el = document.getElementById(id);
   if (el) el.textContent = val;
+}
+function showAppNote(message) {
+  const el = document.getElementById('appNote');
+  if (!el) return;
+  el.textContent = message || '';
+  el.classList.toggle('show', !!message);
 }
 
 // Capacitor-native helpers are optional and only used when running in the iOS shell.
@@ -507,13 +537,34 @@ async function nativeHaptic(kind) {
 }
 async function nativeShare(title, text) {
   const Share = getCapacitorPlugin('Share');
-  if (!Share) return false;
-  try {
-    await Share.share({ title: title, text: text, dialogTitle: title });
-    return true;
-  } catch (_) {
-    return false;
+  if (Share) {
+    try {
+      await Share.share({ title: title, text: text, dialogTitle: title });
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: title, text: text });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showAppNote('Zusammenfassung wurde in die Zwischenablage kopiert.');
+      return true;
+    } catch (_) {}
+  }
+
+  showAppNote('Teilen ist auf diesem Gerät nicht verfügbar.');
+  return false;
 }
 
 function getCalculatorInputs() {
@@ -644,8 +695,9 @@ function renderCustomPresets() {
     return;
   }
   row.innerHTML = presets.map(function (p, idx) {
-    return '<button class="preset-btn" onclick="loadCustomPreset(' + idx + ')">' + p.name + '</button>' +
-      '<button class="preset-btn" onclick="deleteCustomPreset(' + idx + ')" aria-label="Delete ' + p.name + '">x</button>';
+    const safeName = escapeHtml(p.name || 'Preset');
+    return '<button class="preset-btn" onclick="loadCustomPreset(' + idx + ')">' + safeName + '</button>' +
+      '<button class="preset-btn" onclick="deleteCustomPreset(' + idx + ')" aria-label="Delete ' + safeName + '">x</button>';
   }).join('');
 }
 function saveCurrentAsPreset() {
@@ -805,9 +857,19 @@ function isUnfinishedSession(session) {
 }
 function updateSessionRestoreBar() {
   const bar = document.getElementById('sessionRestoreBar');
+  const text = bar ? bar.querySelector('.session-restore-text') : null;
+  if (text && pendingSession) {
+    const laps = Array.isArray(pendingSession.lapLog) ? pendingSession.lapLog.length : 0;
+    const updated = pendingSession.updatedAt ? new Date(pendingSession.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    text.textContent = 'Unfinished session found: ' + laps + ' lap' + (laps === 1 ? '' : 's') + (updated ? ' saved at ' + updated : '') + '.';
+  }
   bar.classList.toggle('show', !!pendingSession);
 }
 function saveCurrentSession() {
+  if (!lapLog.length) {
+    saveSession(null);
+    return;
+  }
   const payload = {
     inputs: getTrackerInputs(),
     lapLog: lapLog.slice(),
@@ -842,6 +904,9 @@ function addLap() {
 }
 function resetTracker() {
   lapLog = [];
+  pendingSession = null;
+  saveSession(null);
+  updateSessionRestoreBar();
   renderTracker();
   nativeHaptic('impact');
 }
@@ -880,7 +945,7 @@ function renderTracker() {
   if (!lapLog.length) {
     document.getElementById('lapLogWrap').innerHTML = '';
     persistInputs();
-    saveCurrentSession();
+    saveSession(null);
     return;
   }
 
@@ -919,6 +984,20 @@ function restoreStateOnLoad() {
   renderTracker();
   if (persisted.activeTab) switchTab(persisted.activeTab);
 }
+
+window.addEventListener('pagehide', function () {
+  persistInputs();
+  if (lapLog.length) saveCurrentSession();
+});
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden') {
+    persistInputs();
+    if (lapLog.length) saveCurrentSession();
+  }
+});
+window.addEventListener('error', function () {
+  showAppNote('Ein Anzeigeproblem wurde erkannt. Bitte App schließen und erneut öffnen; deine Daten bleiben lokal gespeichert.');
+});
 
 restoreStateOnLoad();
 </script>
