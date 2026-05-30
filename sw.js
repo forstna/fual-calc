@@ -1,5 +1,5 @@
 const CACHE = 'fuel-v3';
-const FILES = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png', '/sw.js'];
+const FILES = ['/', '/index.html', '/privacy.html', '/support.html', '/manifest.json', '/icon-192.png', '/icon-512.png', '/sw.js'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {

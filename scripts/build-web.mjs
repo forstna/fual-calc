@@ -9,6 +9,8 @@ mkdirSync(dist, { recursive: true });
 
 const files = [
   'index.html',
+  'support.html',
+  'privacy.html',
   'manifest.json',
   'sw.js',
   'icon-192.png',
