@@ -27,9 +27,9 @@
   }
   html { font-size: 16px; }
   body { background: var(--bg); color: var(--text); font-family: var(--sans); font-weight: 400; line-height: 1.45; min-height: 100vh; -webkit-tap-highlight-color: transparent; }
-  .shell { max-width: 680px; margin: 0 auto; padding: max(8px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); }
+  .shell { max-width: 680px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 14px) 24px max(24px, env(safe-area-inset-bottom)); }
 
-  header { padding: 24px 0 16px; border-bottom: 1px solid var(--border); margin-bottom: 16px; display: flex; align-items: flex-end; justify-content: space-between; }
+  header { padding: 16px 0 16px; border-bottom: 1px solid var(--border); margin-bottom: 16px; display: flex; align-items: flex-end; justify-content: space-between; }
   .wordmark { display: flex; flex-direction: column; gap: 4px; }
   .wordmark-top { font-family: var(--mono); font-size: 10px; font-weight: 400; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
   .wordmark-name { font-size: 30px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); line-height: 1; }
@@ -116,6 +116,7 @@
   .stint-summary-cell .lbl { font-size: 12px; color: var(--muted); font-weight: 500; }
 
   .log-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  #page-stint .log-wrap { min-height: 32dvh; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   thead th { text-align: left; padding: 8px 12px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 400; }
   tbody td { padding: 10px 11px; border-bottom: 1px solid var(--border-lt); color: var(--text); font-family: var(--mono); font-size: 14px; }
@@ -142,12 +143,12 @@
   @media (max-width: 520px) {
     .shell {
       height: 100dvh;
-      padding: 0 12px 10px;
+      padding: calc(env(safe-area-inset-top) + 18px) 12px max(10px, env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
     }
     header {
-      padding: 10px 0 8px;
+      padding: 12px 0 8px;
       margin-bottom: 8px;
     }
     .wordmark-name { font-size: 28px; }
@@ -209,7 +210,8 @@
     .live-card-lbl { font-size: 11px; }
     .lap-input-row { gap: 8px; margin-bottom: 8px; }
     .btn { font-size: 14px; padding: 9px 10px; min-height: 44px; }
-    .log-wrap { max-height: 22dvh; overflow: auto; }
+    .log-wrap { max-height: 38dvh; overflow: auto; }
+    #page-stint .log-wrap { min-height: 34dvh; max-height: 48dvh; }
     .field-row.three { grid-template-columns: 1fr 1fr; }
     .stint-summary { grid-template-columns: 1fr 1fr; }
     .result-row { grid-template-columns: 1fr 1fr; }
@@ -224,7 +226,7 @@
       <span class="wordmark-top">iRacing Strategy</span>
       <span class="wordmark-name">Fuel<em>.</em></span>
     </div>
-    <span class="version-tag">v2.1.1</span>
+    <span class="version-tag">v2.1.2</span>
   </header>
 
   <nav role="tablist" aria-label="Seiten">
@@ -237,37 +239,6 @@
 
   <!-- CALCULATOR -->
   <div id="page-calc" class="page active" role="tabpanel" aria-labelledby="tab-calc">
-    <div class="section">
-      <div class="section-label">Quick Start</div>
-      <div class="preset-row">
-        <button class="preset-btn" onclick="applyQuickStart('gt3sprint')">GT3 Sprint</button>
-        <button class="preset-btn" onclick="applyQuickStart('gt3endurance')">GT3 Endurance</button>
-        <button class="preset-btn" onclick="applyQuickStart('gt4')">GT4</button>
-        <button class="preset-btn" onclick="applyQuickStart('f3')">Formula 3</button>
-        <button class="preset-btn" onclick="applyQuickStart('30min')">30 min</button>
-        <button class="preset-btn" onclick="applyQuickStart('60min')">60 min</button>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-label">Presets</div>
-      <div class="preset-row">
-        <button class="preset-btn" onclick="loadPreset('sprint')">Sprint 30 min</button>
-        <button class="preset-btn" onclick="loadPreset('60')">Endurance 1h</button>
-        <button class="preset-btn" onclick="loadPreset('f3')">Formula 3</button>
-        <button class="preset-btn" onclick="loadPreset('gt3')">GT3</button>
-        <button class="preset-btn" onclick="loadPreset('gt4')">GT4</button>
-      </div>
-      <div class="preset-input-row">
-        <input id="customPresetName" type="text" placeholder="Preset name (z. B. Spa Nacht)">
-        <button class="btn btn-ghost" type="button" onclick="saveCurrentAsPreset()">Save Preset</button>
-      </div>
-      <div class="preset-row" id="customPresetsRow"></div>
-      <div class="preset-row">
-        <button class="btn btn-ghost" type="button" onclick="shareCurrentPreset()">Share Preset</button>
-      </div>
-    </div>
-
     <div class="section">
       <div class="section-label">Race Setup</div>
       <div class="field-row">
@@ -335,6 +306,37 @@
       <div id="calcWarning"></div>
       <div class="preset-row" style="margin-top:12px;">
         <button class="btn btn-ghost" type="button" onclick="shareResultSummary()">Share Result</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Quick Start</div>
+      <div class="preset-row">
+        <button class="preset-btn" onclick="applyQuickStart('gt3sprint')">GT3 Sprint</button>
+        <button class="preset-btn" onclick="applyQuickStart('gt3endurance')">GT3 Endurance</button>
+        <button class="preset-btn" onclick="applyQuickStart('gt4')">GT4</button>
+        <button class="preset-btn" onclick="applyQuickStart('f3')">Formula 3</button>
+        <button class="preset-btn" onclick="applyQuickStart('30min')">30 min</button>
+        <button class="preset-btn" onclick="applyQuickStart('60min')">60 min</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Presets</div>
+      <div class="preset-row">
+        <button class="preset-btn" onclick="loadPreset('sprint')">Sprint 30 min</button>
+        <button class="preset-btn" onclick="loadPreset('60')">Endurance 1h</button>
+        <button class="preset-btn" onclick="loadPreset('f3')">Formula 3</button>
+        <button class="preset-btn" onclick="loadPreset('gt3')">GT3</button>
+        <button class="preset-btn" onclick="loadPreset('gt4')">GT4</button>
+      </div>
+      <div class="preset-input-row">
+        <input id="customPresetName" type="text" placeholder="Preset name (z. B. Spa Nacht)">
+        <button class="btn btn-ghost" type="button" onclick="saveCurrentAsPreset()">Save Preset</button>
+      </div>
+      <div class="preset-row" id="customPresetsRow"></div>
+      <div class="preset-row">
+        <button class="btn btn-ghost" type="button" onclick="shareCurrentPreset()">Share Preset</button>
       </div>
     </div>
   </div>
