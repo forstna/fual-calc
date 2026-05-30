@@ -1,0 +1,11 @@
+{
+  "cli": { "version": ">= 16.18.0", "appVersionSource": "local" },
+  "build": {
+    "production": {
+      "ios": {
+        "image": "latest"
+      }
+    }
+  },
+  "submit": { "production": { "ios": { "ascAppId": "6775002619" } } }
+}

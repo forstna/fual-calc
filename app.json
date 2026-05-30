@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Fuel — iRacing Calculator",
+    "slug": "fuel-calc",
+    "owner": "forstna",
+    "ios": { "bundleIdentifier": "com.forstna.fuelcalc" },
+    "extra": {
+      "eas": {
+        "projectId": "0681ac3e-5ea0-4653-adc9-fd179f3d6ea3"
+      }
+    }
+  }
+}
