@@ -1,6 +1,6 @@
 {
 	"appId": "com.forstna.fuelcalc",
-	"appName": "Fuel — iRacing Calculator",
+	"appName": "Fuel — Sim Racing Calculator",
 	"webDir": "dist",
 	"bundledWebRuntime": false,
 	"server": {

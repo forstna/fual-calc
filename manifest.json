@@ -1,7 +1,7 @@
 {
-  "name": "Fuel iRacing",
+  "name": "Fuel Sim Racing",
   "short_name": "Fuel",
-  "description": "iRacing Fuel & Stint Calculator",
+  "description": "Sim Racing Fuel & Stint Calculator",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",

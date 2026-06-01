@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Fuel — iRacing Calculator",
+    "name": "Fuel — Sim Racing Calculator",
     "slug": "fuel-calc",
     "owner": "forstna",
     "ios": { "bundleIdentifier": "com.forstna.fuelcalc" },

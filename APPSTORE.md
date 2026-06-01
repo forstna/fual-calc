@@ -1,9 +1,9 @@
 # App Store / TestFlight checklist
 
 ## Current app
-- App name: Fuel — iRacing Calculator
+- App name: Fuel — Sim Racing Calculator
 - Bundle ID: `com.forstna.fuelcalc`
-- Version/build: `2.1.1` / `3`
+- Version/build: `2.1.2` / `7`
 - Platform wrapper: Capacitor iOS
 - Web source of truth: `index.html`, `sw.js`, `manifest.json`
 
@@ -24,9 +24,9 @@
 - Encryption/export compliance: Uses only standard Apple/web platform encryption; `ITSAppUsesNonExemptEncryption=false` is set.
 
 ## Suggested metadata draft
-Name: Fuel — iRacing Calculator
+Name: Fuel — Sim Racing Calculator
 Subtitle: Sim racing fuel strategy
 Category: Sports or Utilities
-Short description: Calculate race fuel, stint strategy, pit stops, safety margin, and live fuel projections for iRacing-style sim racing.
+Short description: Calculate race fuel, stint strategy, pit stops, safety margin, and live fuel projections for sim racing.
 Support URL: use the Netlify app URL or a GitHub Pages/support page.
 Privacy URL: add a simple no-data-collected privacy page before App Store submission.
