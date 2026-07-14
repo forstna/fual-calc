@@ -1,4 +1,4 @@
-# fuel-calc
+# FuelCalc
 Fuel calculator for simracing.
 
 ## Capacitor iOS setup

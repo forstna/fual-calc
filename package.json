@@ -1,5 +1,5 @@
 {
-  "name": "fuel-calc",
+  "name": "fuelcalc",
   "version": "2.1.2",
   "private": true,
   "description": "Fuel calculator web app packaged with Capacitor iOS",
